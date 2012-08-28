@@ -13,7 +13,6 @@ APP.indexedDB = (function () {
 	}
 
 	function insertInto(model, data, successCallback) {
-		console.log("Insert into", model, data, successCallback);
 		var transaction = db.transaction([model], IDBTransaction.READ_WRITE || 'readwrite'), store, i, request, total = data.length;
 
 		function successCallbackInner() {

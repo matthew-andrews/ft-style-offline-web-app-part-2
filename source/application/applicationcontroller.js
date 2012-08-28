@@ -39,6 +39,8 @@ APP.applicationController = (function () {
         var page = window.location.hash;
         if (page) {
             page = page.substring(1);
+        }
+        if (page.length > 0) {
             if (parseInt(page, 10) > 0) {
                 showArticle(parseInt(page, 10));
             } else {
