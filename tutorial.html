@@ -1,0 +1,689 @@
+This is part 2 of a tutorial series on how to make an FT style offline web app.
+
+We <a href="http://labs.ft.com/2012/08/basic-offline-html5-web-app/">left off last time</a> with a severely limited, but working, offline HTML5 web app. This time we will aim to address some of the concerns that were raised at the end of the last tutorial.
+
+We will keep the core functionality of the app the same - the same simple RSS reader - and instead focus on making it faster and making it work for everyone, including users of Firefox, IE10, and even old pre-HTML5 browsers, such as IE6.
+
+This demo app will continue to be based on the same principals of maximum ubiquity and brevity and so will continue to use jQuery and PHP and will require no special server configuration. As before this tutorial intentionally avoids going into detail on particular technologies and instead attempts to give a high level overview on how, with the fewest lines of code and in the shortest amount of time, various technologies can be brought together to achieve the goals we have set out to solve. This is purely about making the best of what we have available in real browsers today and delivering great experiences on the web platform.
+
+As always, the full code is up on GitHub.
+
+<h2>Requirements for the demo app - Part 2</h2>
+<ul>
+  <li>A minimised delay between a user clicking a button and a page being displayed.</li>
+  <li>Fully support Firefox, Internet Explorer 10, achieve better performance on Chrome as well as continue to support all the platforms supported by the first tutorial (which included Android, Blackberry Playbook, iPads and iPhones).</li>
+  <li>Support every other browser as well as we can - falling back to being a normal website on older browsers.</i></li>
+  <li>Users of the app we made in the previous tutorial should be able to seemlessly start using the new app (ie the new bootstrap must be compatible with the old version).</li>
+</ul>
+
+<h2>Housekeeping</h2>
+
+First in order to overcome the tap-delay we will make use of FT Labs' <a href="https://raw.github.com/ftlabs/fastclick/master/src/fastclick.js">first open source project - FT FastClick</a>. I recommend placing it in the following folder <strong>/libraries/client</strong> as we will soon start pre-rendering pages on the server and so will need server libraries as well as client libraries:-
+
+<table>
+  <tr>
+    <td><b>/libraries/client/fastclick.js</b></td>
+    <td><a href="https://raw.github.com/ftlabs/fastclick/master/src/fastclick.js">Download</a></td>
+  </tr>
+  <tr>
+    <td><b>/source/datasources/network.js</b></td>
+    <td></td>
+  </tr>
+  <tr>
+    <td><b>/source/datasources/indexeddb.js</b></td>
+    <td></td>
+  </tr>
+  <tr>
+    <td><b>/source/datasources/websql.js</b></td>
+    <td></td>
+  </tr>
+</table>
+
+Delete the following file:-
+
+<table>
+  <tr>
+    <td><b>/source/database.js</b></td><td>This file will be replaced by the three Javascript wrappers around the three data source technologies available to browsers (IndexedDB, WebSQL and live-loading from the network - traditional AJAX) which one will be chosen based on the capabilities of the browser being used.</td>
+  </tr>
+</table>
+
+<h2>2.1 - Faster clicks with FT FastClick</h2>
+
+In the end of the last tutorial I mentioned that there is a 300ms delay between the user tapping a link and the browser responding. (The browser is waiting to see if you are going to tap again - so that if you do, it knows you want to zoom in instead of clicking something). Since we don't want the user to zoom right now (and in the future when we might, we'll handle it as a special case) we've created a simple, open-sourced plugin that removes that delay for you called <a href="http://labs.ft.com/2012/08/fastclick-redux/">FT FastClick</a>.
+
+To start using FT FastClick in this demo app follow these simple steps:-
+<ol>
+  <li>Ensure <a href="https://github.com/ftlabs/fastclick">the latest version of FT FastClick</a> is saved inside <strong>/libraries/client/fastclick.js</strong>.</li>
+  <li>Include the FT FastClick library to <strong>/api/resources/index.php</strong>. The top of my file now looks like this:-
+[php]
+<?php
+// Concatenate the files in the /source/ directory
+// This would be a sensible point to compress your Javascript.
+$js = '';
+$js .= file_get_contents('../../libraries/client/fastclick.js');
+$js = $js . 'var APP={}; (function (APP) {';
+$js = $js . file_get_contents('../../source/application/applicationcontroller.js');
+$js = $js . file_get_contents('../../source/articles/articlescontroller.js');
+$js = $js . file_get_contents('../../source/articles/article.js');
+... etc ...
+[/php]
+</li>
+<li>Inside <strong>/source/application/applicationcontroller.js</strong>, we need to make two changes. Firstly we will need to declare the variable that FT FastClick will use at the top of the file. This is so that later we have the option of switching it off, if we need to. The top of <strong>applicationcontroller.js</strong> would then become:-
+[js]
+APP.applicationController = (function () {
+  'use strict';
+
+  var fastClick;
+
+  function offlineWarning() {
+    alert("This feature is only available online.");
+  }
+
+  function pageNotFound() {
+    alert("That page you were looking for cannot be found.");
+  }
+
+... etc ...
+[/js]
+</li></li>Secondly we need to add the single line that sets up FT FastClick to your project (<code>fastClick = new FastClick(document.body);</code>) inside the <code>start</code> function. So the <code>start</code> function would become:-
+[js]
+function start(resources, start) {
+  APP.database.open(function () {
+
+    // Listen to the hash tag changing
+    $(window).bind("hashchange", route);
+
+    // Set up FT FastClick
+    fastClick = new FastClick(document.body);
+
+    // Inject CSS Into the DOM
+    $("head").append("<style>" + resources.css + "</style>");
+
+    // Create app elements
+    $("body").html(APP.templates.application());
+
+    // Remove our loading splash screen
+    $("#loading").remove();
+
+    route();
+  });
+
+  if (storeResources) {
+    localStorage.resources = JSON.stringify(resources);
+  }
+}[/js]
+</li>
+</ol>
+
+<h2>2.2 - IndexedDB: Firefox and Internet Explorer 10</h2>
+We're firm believers in progressive enhancement but implementing a feature so that it can work with two different client side database technologies is tricky. We could use a polyfill to make WebSQL behave like IndexedDB but this has some obvious performance implication on WebSQL (required for some of our main target platforms - iPhone, iPad, Blackberry Playbook) and this won't help old browsers such as IE 6-9 or old non-HTML5 mobile web browsers. So rather than trying to poly-fill WebSQL to work like IndexedDB for this demo app we will try to design a new, simple common API that can be used to talk to IndexedDB, WebSQL or fallback to using the network as a data source (via ajax) when neither is available.
+
+For this common API we will implement the following methods:-
+
+<table>
+  <tr>
+    <td><u>Method name (Parameters)</u></td>
+    <td><u>Notes</u></td>
+  </tr>
+  <tr>
+    <td><strong>start(successCallback)</strong></td>
+    <td>This function will do any data source set up login. We need have a success callback because opening an indexedDB is an asynchronous process.</td>
+  </tr>
+  <tr>
+    <td><strong>selectOne(model, id, successCallback, failureCallback)</strong></td>
+    <td>Selecting a single row in a data store for a type of data, in our demo app model will always be articles.</td>
+  </tr>
+  <tr>
+    <td><strong>selectAll(model, successCallback, failureCallback)</strong></td>
+    <td>Selecting all rows in a data store.</td>
+  </tr>
+  <tr>
+    <td><strong>insertInto(model, data, successCallback)</strong></td>
+    <td>Inserting data into a data store.</td>
+  </tr>
+  <tr>
+    <td><strong>deleteAllFrom(model, successCallback)</strong></td>
+    <td>For clearing all the data of one type in a data store.</td>
+  </tr>
+</table>
+
+For the case where a browser doesn't have a local database this is very easy. We actually don't even need to implement anything for the <code>insertInto</code> and <code>deleteAllFrom</code> methods because they don't make sense for our app.
+
+<strong>/source/datasources/network.js</strong>
+[js]
+APP.network = (function () {
+  'use strict';
+
+  function start(successCallback) {
+    if (successCallback) {
+      successCallback();
+    }
+  }
+
+  function insertInto(model, data, successCallback) {
+    if (successCallback) {
+      successCallback();
+    }
+  }
+
+  function deleteAllFrom(model, successCallback) {
+    if (successCallback) {
+      successCallback();
+    }
+  }
+
+  function selectAll(model, successCallback, failureCallback) {
+    $.ajax({
+      dataType: 'json',
+      url: APP_ROOT + 'api/' + model,
+      success: successCallback || function () {},
+      type: 'GET',
+      error: failureCallback || function () {}
+    });
+  }
+
+  function selectOne(model, id, successCallback, failureCallback) {
+    $.ajax({
+      dataType: 'json',
+      url: APP_ROOT + 'api/' + model + '/' + id,
+      success: successCallback || function () {},
+      type: 'GET',
+      error: failureCallback || function () {}
+    });
+  }
+
+  return {
+    start: start,
+    insertInto: insertInto,
+    deleteAllFrom: deleteAllFrom,
+    selectAll: selectAll,
+    selectOne: selectOne
+  };
+
+}());
+[/js]
+
+This is just a very thin wrapper around the <code>jQuery.ajax</code> method. As far as our app is concerned <code>insertInto</code> and <code>deleteAllFrom</code> don't make sense if we don't have a local database because those functions are concerned with caching data for offline use. One of the complexities of an offline app, and this is true for both native and HTML5 web apps, is that there are always at least two data sources: the data retrieved from the internet and the data stored on the user's device and the challenge is to keep those two data sources in sync as much as possible.
+
+<strong>/source/datasources/websql.js</strong>
+[js]
+APP.webSQL = (function () {
+    'use strict';
+
+    var smallDatabase;
+
+    /**
+     * Runs database queries
+     *
+     * @public
+     * @param  {String} query
+     * @param  {Array} data
+     * @param  {Function} successCallback
+     * @return {void}
+     */
+    function runQuery(query, data, returnFirst, successCallback) {
+        var i, l, remaining;
+
+
+        if (!(data[0] instanceof Array)) {
+            data = [data];
+        }
+
+        remaining = data.length;
+
+        function innerSuccessCallback(tx, rs) {
+            var i, l, output = [];
+            remaining = remaining - 1;
+            if (!remaining) {
+
+                // HACK Convert row object to an array to make our lives easier
+                for (i = 0, l = rs.rows.length; i < l; i = i + 1) {
+                    output.push(rs.rows.item(i));
+                }
+                if (successCallback) {
+                    successCallback(returnFirst ? output[0] : output);
+                }
+            }
+        }
+
+        function errorCallback(tx, e) {
+            if (console) {
+          console.log("WebSQL error: ", tx, e);
+        }
+        }
+
+        smallDatabase.transaction(function (tx) {
+            for (i = 0, l = data.length; i < l; i = i + 1) {
+                tx.executeSql(query, data[i], innerSuccessCallback, errorCallback);
+            }
+        });
+    }
+
+    function insertInto(model, data, successCallback) {
+        var remaining = data.length, i, l, insertData = [];
+
+        if (remaining === 0) {
+            successCallback();
+        }
+
+        // Convert article array of objects to array of arrays
+        for (i = 0, l = data.length; i < l; i = i + 1) {
+            insertData[i] = [data[i].id, data[i].date, data[i].headline, data[i].author, data[i].body];
+        }
+
+        if (model === 'articles') {
+            runQuery("INSERT INTO articles (id, date, headline, author, body) VALUES (?, ?, ?, ?, ?);", insertData, false, successCallback);
+        }
+    }
+
+    function deleteAllFrom(model, successCallback) {
+        runQuery("DELETE FROM " + model, [], false, successCallback);
+    }
+
+    function selectAll(model, successCallback) {
+        if (model === "articles") {
+            runQuery("SELECT id, headline, date, author FROM articles", [], false, successCallback);
+        }
+    }
+
+    function selectOne(model, id, successCallback) {
+        if (model === "articles") {
+            runQuery("SELECT id, headline, date, author, body FROM articles WHERE id = ?", [id], true, successCallback);
+        }
+    }
+
+    function start(successCallback, failureCallback) {
+        smallDatabase = openDatabase("APP", "1.0", "Not The FT Web App", (5 * 1024 * 1024));
+        runQuery("CREATE TABLE IF NOT EXISTS articles(id INTEGER PRIMARY KEY ASC, date TIMESTAMP, author TEXT, headline TEXT, body TEXT)", [], false, successCallback);
+    }
+
+    return {
+        start: start,
+        insertInto: insertInto,
+        deleteAllFrom: deleteAllFrom,
+        selectAll: selectAll,
+        selectOne: selectOne
+    };
+}());
+[/js]
+
+This is based on the same code the we used in <a href="http://labs.ft.com/2012/08/basic-offline-html5-web-app/">part 1 of the FT style web app tutorial</a>.
+
+<strong>/source/datasources/indexeddb.js</strong>
+[js]
+APP.indexedDB = (function () {
+  'use strict';
+
+  var db,
+    indexedDB = window.indexedDB || window.webkitIndexedDB || window.mozIndexedDB || window.msIndexedDB,
+    IDBTransaction = window.hasOwnProperty('webkitIndexedDB') ? window.webkitIDBTransaction : window.IDBTransaction,
+    IDBKeyRange = window.hasOwnProperty('webkitIndexedDB') ? window.webkitIDBKeyRange : window.IDBKeyRange;
+
+  function indexedDBError(event) {
+    if (console) {
+      console.error("An error occurred", event);
+    }
+  }
+
+  function insertInto(model, data, successCallback) {
+    console.log("Insert into", model, data, successCallback);
+    var transaction = db.transaction([model], IDBTransaction.READ_WRITE || 'readwrite'), store, i, request, total = data.length;
+
+    function successCallbackInner() {
+      total = total - 1;
+      if (total === 0) {
+        successCallback();
+      }
+    }
+
+    transaction.onerror = indexedDBError;
+    store = transaction.objectStore(model);
+    for (i in data) {
+      if (data.hasOwnProperty(i)) {
+        request = store.add(data[i]);
+        request.onsuccess = successCallbackInner;
+        request.onerror = indexedDBError;
+      }
+    }
+  }
+
+  function deleteAllFrom(model, successCallback) {
+    var transaction = db.transaction([model], IDBTransaction.READ_WRITE || 'readwrite'), store, request;
+    transaction.onerror = indexedDBError;
+    store = transaction.objectStore(model);
+    request = store.clear();
+    request.onerror = indexedDBError;
+    request.onsuccess = successCallback;
+  }
+
+  function selectAll(model, successCallback) {
+    var transaction = db.transaction([model], IDBTransaction.READ_ONLY || 'readonly'), store, request, results = [], range;
+    transaction.onerror = indexedDBError;
+    store = transaction.objectStore(model);
+    range = IDBKeyRange.lowerBound(0);
+    request = store.openCursor();
+
+    request.onerror = indexedDBError;
+    request.onsuccess = function (event) {
+      var result = event.target.result;
+
+      // When result is null the end is reached
+      if (!result) {
+        successCallback(results);
+        return;
+      }
+      results.push(result.value);
+
+      // Weird to hack jslint
+      result['continue']();
+    };
+  }
+
+  function selectOne(model, id, successCallback) {
+    var transaction = db.transaction([model], IDBTransaction.READ_WRITE || 'readwrite'), store, request;
+    transaction.onerror = indexedDBError;
+    store = transaction.objectStore(model);
+    request = store.get(id);
+    request.onerror = indexedDBError;
+    request.onsuccess = function (event) {
+      var result = event.target.result;
+      successCallback(result);
+    };
+  }
+
+  function start(successCallback, failureCallback) {
+    if (!indexedDB) {
+      failureCallback();
+      return;
+    }
+
+    var request = indexedDB.open("APPDATA", 1),
+      version = '5.0';
+
+    function installModels(db) {
+
+      // TODO This is strictly model logic, and ought not live inside the indexedDB library, should move.
+      db.createObjectStore("articles", {keyPath: "id"});
+    }
+
+    request.onsuccess = function (event) {
+      var setVersionRequest;
+
+      db = event.target.result;
+      if (db.setVersion && version !== db.version) {
+        setVersionRequest = db.setVersion(version);
+        setVersionRequest.onfailure = indexedDBError;
+        setVersionRequest.onsuccess = function (event) {
+          installModels(db);
+          event.target.transaction.oncomplete = function () {
+            if (successCallback) {
+              successCallback();
+            }
+          };
+        };
+
+      } else {
+        successCallback();
+      }
+    };
+    request.onupgradeneeded = function (event) {
+      var db = event.target.result;
+      installModels(db);
+    };
+    request.onerror = function (event) {
+      alert("You have chosen not to use offline storage");
+      failureCallback();
+    };
+  }
+
+  return {
+    start: start,
+    insertInto: insertInto,
+    deleteAllFrom: deleteAllFrom,
+    selectAll: selectAll,
+    selectOne: selectOne
+  };
+}());
+[/js]
+
+A <a href="https://developer.mozilla.org/en-US/docs/IndexedDB">good resource for understanding indexedDB is on the Mozilla Development Network</a> so I won't go into details on how this works for this tutorial.
+
+Now we will need to update the resources api PHP file so that it is aware of the files we have just created. (And also we need to delete the old database.js file)
+
+<strong>/api/resources/index.php</strong>
+[php]
+<?php
+// Concatenate the files in the /source/ directory
+// This would be a sensible point to compress your Javascript.
+$js = '';
+$js .= file_get_contents('../../libraries/client/fastclick.js');
+$js = $js . 'var APP={}; (function (APP) {';
+$js = $js . file_get_contents('../../source/application/applicationcontroller.js');
+$js = $js . file_get_contents('../../source/articles/articlescontroller.js');
+$js = $js . file_get_contents('../../source/articles/article.js');
+$js = $js . file_get_contents('../../source/datasource/network.js');
+$js = $js . file_get_contents('../../source/datasource/indexeddb.js');
+$js = $js . file_get_contents('../../source/datasource/websql.js');
+$js = $js . file_get_contents('../../source/templates.js');
+$js = $js . '}(APP));';
+$output['js'] = $js;
+
+// Concatenate the files in the /css/ directory
+// This would be a sensible point to compress your css
+$css = '';
+$css = $css . file_get_contents('../../css/global.css');
+$output['css'] = $css;
+
+// Encode with JSON (PHP 5.2.0+) & output the resources
+echo json_encode($output);
+[/php]
+
+Now we need to add the code that makes the decision about which data source technology to use.
+
+<strong>/source/application/applicationcontroller.js</strong>
+[js]
+APP.applicationController = (function () {
+    'use strict';
+
+    var fastClick;
+
+    function offlineWarning() {
+        alert("This feature is only available online.");
+    }
+
+    function pageNotFound() {
+        alert("That page you were looking for cannot be found.");
+    }
+
+    function showHome() {
+        $("#body").html(APP.templates.home());
+
+        // Load up the last cached copy of the news
+        APP.articlesController.showArticleList();
+
+        $('#refreshButton').click(function () {
+
+            // If the user is offline, don't bother trying to synchronize
+            if (navigator && navigator.onLine === false) {
+                offlineWarning();
+            } else {
+                APP.articlesController.synchronizeWithServer(function failureCallback() {
+                    alert("This feature is not available offline");
+                });
+            }
+        });
+    }
+
+    function showArticle(id) {
+        $("#body").html(APP.templates.articleLoading());
+        APP.articlesController.showArticle(id);
+    }
+
+    function route() {
+        var page = window.location.hash;
+        if (page) {
+            page = page.substring(1);
+            if (parseInt(page, 10) > 0) {
+                showArticle(parseInt(page, 10));
+            } else {
+                pageNotFound();
+            }
+        } else {
+            showHome();
+        }
+    }
+
+    function initialize(resources) {
+
+        // Listen to the hash tag changing
+        $(window).bind("hashchange", route);
+
+        // Set up FastClick
+        fastClick = new FastClick(document.body);
+
+        // Inject CSS Into the DOM
+        $("head").append("<style>" + resources.css + "</style>");
+
+        // Create app elements
+        $("body").html(APP.templates.application());
+
+        // Remove our loading splash screen
+        $("#loading").remove();
+
+        route();
+    }
+
+    // This is to our webapp what main() is to C, $(document).ready is to jQuery, etc
+    function start(resources, start) {
+
+        // When indexedDB available, use it!
+        APP.indexedDB.start(function indexedDBSuccess() {
+            APP.database = APP.indexedDB;
+            initialize(resources);
+
+            // When indexedDB is not available, fallback to trying websql
+        }, function indexedDBFailure() {
+            APP.webSQL.start(function webSQLSuccess() {
+                APP.database = APP.webSQL;
+                initialize(resources);
+
+            // When webSQL not available, fall back to using the network
+            }, function webSQLFailure() {
+                APP.network.start(function networkSuccess() {
+                    APP.database = APP.network;
+                    initialize(resources);
+                });
+            });
+        });
+
+        if (storeResources && localStorage) {
+            localStorage.resources = JSON.stringify(resources);
+        }
+    }
+
+    return {
+        start: start
+    };
+}());
+[/js]
+
+We first attempt to set up an indexedDB database, then if that fails attempt to set up a WebSQL database then finally fail to using the network. This enables us to get the best out of those browsers that support IndexedDB whilst continuing to be able to support all browsers that do not support these features.
+
+<strong>Other changes:-</strong>
+<ul>
+  <li>I've refactored the code slightly so that much of the functionality used to live inside <code>start</code> is moved to the new private function <code>initialize</code> - which will get run after whichever data source technology the app chooses to use is fully loaded;</li>
+  <li>and made a small change to the <code>route</code> function to force the value it passes to <code>showArticle</code> to be an integer.</li>
+</ul>
+
+Now all the groundwork for being able to support IndexedDB, WebSQL and browsers that have neither client side database technology we need to now update our article model to use the new database API, which will look like this:-
+
+<strong>/source/articles/article.js</strong>
+[js]
+APP.article = (function () {
+    'use strict';
+
+    function deleteArticles(successCallback) {
+        APP.database.deleteAllFrom('articles', successCallback);
+    }
+
+    function insertArticles(articles, successCallback) {
+        APP.database.insertInto('articles', articles, successCallback);
+    }
+
+    function selectBasicArticles(successCallback) {
+        APP.database.selectAll('articles', successCallback);
+    }
+
+    function selectFullArticle(id, successCallback) {
+        APP.database.selectOne('articles', id, successCallback);
+    }
+
+    return {
+        insertArticles: insertArticles,
+        selectBasicArticles: selectBasicArticles,
+        selectFullArticle: selectFullArticle,
+        deleteArticles: deleteArticles
+    };
+}());
+[/js]
+
+Finally the format in which a single article comes back as has changed from an array containing a single article to an object. So we need to make one final update:-
+
+<strong>/source/templates.js</strong>
+[js]
+APP.templates = (function () {
+    'use strict';
+
+    function application() {
+        return '<div id="window"><div id="header"><h1>Guardian Technology News</h1></div><div id="body"></div></div>';
+    }
+
+    function home() {
+        return '<button id="refreshButton">Refresh the news!</button><div id="headlines"></div></div>';
+
+    }
+
+    function articleList(articles) {
+        var i, l, output = '';
+
+        if (!articles.length) {
+            return '<p><i>No articles have been found, maybe you haven\'t <b>refreshed the news</b>?</i></p>';
+        }
+        for (i = 0, l = articles.length; i < l; i = i + 1) {
+            output = output + '<li><a href="#' + articles[i].id + '"><b>' + articles[i].headline + '</b><br />By ' + articles[i].author + ' on ' + articles[i].date + '</a></li>';
+        }
+        return '<ul>' + output + '</ul>';
+    }
+
+    function article(articleData) {
+
+        // If the data is not in the right form, redirect to an error
+        if (!articleData) {
+            window.location = '#error';
+            return;
+        }
+        return '<a href="#">Go back home</a><h2>' + articleData.headline + '</h2><h3>By ' + articleData.author + ' on ' + articleData.date + '</h3>' + articleData.body;
+    }
+
+    function articleLoading() {
+        return '<a href="#">Go back home</a><br /><br />Please wait&hellip;';
+    }
+
+    return {
+        application: application,
+        home: home,
+        articleList: articleList,
+        article: article,
+        articleLoading: articleLoading
+    };
+}());
+[/js]
+
+The change is in fourth function, <code>function article(articleData)</code>.
+
+<h2>Wrapping Up</h2>
+Our app is now responsive on touch enabled devices thanks to FT FastClick. It is also now able to boot in Firefox, IE10 and will perform faster on Chrome and Chrome for Androidand should work - albeit not offline - older browsers such as IE6. But we're not done yet - it's still not a website in a traditional sense: it doesn't work if Javascript is switched off and it can't be indexed by search engines. In next month's article we'll finally fix this.
+
+Finally, if you think you'd like to work on this sort of thing and live (or would like to live) in London, <a href="/jobs">we're hiring!</a>
+
+<span style="font-size: 80%; line-height: 1em;">MA - @andrewsmatt on <a href="http://twitter.com/andrewsmatt">Twitter</a> &amp; <a href="http://weibo.com/andrewsmatt">Weibo</a>.</span>
