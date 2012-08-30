@@ -94,7 +94,7 @@ APP.applicationController = (function () {
             });
         });
 
-        if (storeResources && localStorage) {
+        if (storeResources && window['localStorage']) {
             localStorage.resources = JSON.stringify(resources);
         }
     }
