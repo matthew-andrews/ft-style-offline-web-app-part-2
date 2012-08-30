@@ -1,6 +1,6 @@
-This is part 2 of a tutorial series on how to make an FT style offline web app.
+This is part 2 of a <a href="http://labs.ft.com/category/tutorial/">tutorial series</a> on how to make an FT style offline web app. <strong>If you haven't already, <a href="http://labs.ft.com/2012/08/basic-offline-html5-web-app/">read part 1 first</a></strong>.
 
-We <a href="http://labs.ft.com/2012/08/basic-offline-html5-web-app/">left off last time</a> with a severely limited, but working, offline HTML5 web app. This time we will aim to address some of the concerns that were raised at the end of the last tutorial.
+We left off last time with a severely limited, but working, offline HTML5 web app. This time we will aim to address some of the concerns that were raised at the end of the last tutorial.
 
 We will keep the core functionality of the app the same - the same simple RSS reader - and instead focus on making it faster and making it work for everyone, including users of Firefox, IE10, and even old pre-HTML5 browsers, such as IE6.
 
@@ -8,17 +8,17 @@ This demo app will continue to be based on the same principals of maximum ubiqui
 
 As always, <a href="https://github.com/matthew-andrews/ft-style-offline-web-app-part-2">the full code is up on GitHub</a>.
 
-<h2>Requirements for the demo app - Part 2</h2>
+<h2>New requirements</h2>
 <ul>
   <li>A minimised delay between a user clicking a button and a page being displayed.</li>
   <li>Fully support Firefox, Internet Explorer 10, achieve better performance on Chrome as well as continue to support all the platforms supported by the first tutorial (which included Android, Blackberry Playbook, iPads and iPhones).</li>
   <li>Support every other browser as well as we can - falling back to being a normal website on older browsers.</i></li>
-  <li>Users of the app we made in the previous tutorial should be able to seemlessly start using the new app (ie the new bootstrap must be compatible with the old version).</li>
+  <li>Users of the app we made in the previous tutorial should be able to seamlessly start using the new app (ie the new bootstrap must be compatible with the old version).</li>
 </ul>
 
 <h2>Housekeeping</h2>
 
-First in order to overcome the tap-delay we will make use of FT Labs' <a href="https://raw.github.com/ftlabs/fastclick/master/src/fastclick.js">first open source project - FT FastClick</a>. I recommend placing it in the following folder <strong>/libraries/client</strong> as we will soon start pre-rendering pages on the server and so will need server libraries as well as client libraries:-
+To overcome the tap-delay we'll use an FT Labs open source project: <a href="https://raw.github.com/ftlabs/fastclick/master/src/fastclick.js">FT FastClick</a>. We'll put it in the folder <strong>/libraries/client</strong>, because soon we will need server libraries as well as client libraries, and keeping them separate will make our app easier to maintain.  Add the following files:
 
 <table>
   <tr>
@@ -27,19 +27,19 @@ First in order to overcome the tap-delay we will make use of FT Labs' <a href="h
   </tr>
   <tr>
     <td><b>/source/datasources/network.js</b></td>
-    <td></td>
+    <td><em>create blank</em></td>
   </tr>
   <tr>
     <td><b>/source/datasources/indexeddb.js</b></td>
-    <td></td>
+    <td><em>create blank</em></td>
   </tr>
   <tr>
     <td><b>/source/datasources/websql.js</b></td>
-    <td></td>
+    <td><em>create blank</em></td>
   </tr>
 </table>
 
-Delete the following file:-
+And delete this one:
 
 <table>
   <tr>
@@ -47,14 +47,15 @@ Delete the following file:-
   </tr>
 </table>
 
-<h2>2.1 - Faster clicks with FT FastClick</h2>
+<h2>Faster clicks with FT FastClick</h2>
 
-In the end of the last tutorial I mentioned that there is a 300ms delay between the user tapping a link and the browser responding. (The browser is waiting to see if you are going to tap again - so that if you do, it knows you want to zoom in instead of clicking something). Since we don't want the user to zoom right now (and in the future when we might, we'll handle it as a special case) we've created a simple, open-sourced plugin that removes that delay for you called <a href="http://labs.ft.com/2012/08/fastclick-redux/">FT FastClick</a>.
+At the end of the last tutorial I described the 300ms delay between the user tapping a link and the browser responding. (It's waiting to see if you are going to double tap - if you do, it knows you want to zoom in instead of clicking). Since we don't want the user to zoom right now, we can use FT Fastclick to remove that delay.
 
-To start using FT FastClick in this demo app follow these simple steps:-
+To start using FT FastClick in this demo app:
+
 <ol>
-  <li>Ensure <a href="https://github.com/ftlabs/fastclick">the latest version of FT FastClick</a> is saved inside <strong>/libraries/client/fastclick.js</strong>.</li>
-  <li>Include the FT FastClick library to <strong>/api/resources/index.php</strong>. The top of my file now looks like this:-
+  <li>Ensure <a href="https://github.com/ftlabs/fastclick">the latest version of FT FastClick</a> is saved at <strong>/libraries/client/fastclick.js</strong>.</li>
+  <li>Add it to <strong>/api/resources/index.php</strong>. The top of my file now looks like this:-
 [php]
 <?php
 // Concatenate the files in the /source/ directory
@@ -68,7 +69,7 @@ $js = $js . file_get_contents('../../source/articles/article.js');
 ... etc ...
 [/php]
 </li>
-<li>Inside <strong>/source/application/applicationcontroller.js</strong>, we need to make two changes. Firstly we will need to declare the variable that FT FastClick will use at the top of the file. This is so that later we have the option of switching it off, if we need to. The top of <strong>applicationcontroller.js</strong> would then become:-
+<li>Inside <strong>/source/application/applicationcontroller.js</strong>, make two changes. First, declare the variable that FT FastClick will use at the top of the file, so we can maintain a reference to it and disable it later if required. The top of <strong>applicationcontroller.js</strong> is now:
 [js]
 APP.applicationController = (function () {
   'use strict';
@@ -85,7 +86,8 @@ APP.applicationController = (function () {
 
 ... etc ...
 [/js]
-</li></li>Secondly we need to add the single line that sets up FT FastClick to your project (<code>fastClick = new FastClick(document.body);</code>) inside the <code>start</code> function. So the <code>start</code> function would become:-
+</li>
+<li>Second, add the single line that sets up FT FastClick for the project (<code>fastClick = new FastClick(document.body);</code>) inside the <code>start</code> function. The <code>start</code> function is now:
 [js]
 function start(resources, start) {
   APP.database.open(function () {
@@ -115,39 +117,42 @@ function start(resources, start) {
 </li>
 </ol>
 
-<h2>2.2 - IndexedDB: Firefox and Internet Explorer 10</h2>
-We're firm believers in progressive enhancement but implementing a feature so that it can work with two different client side database technologies is tricky. We could use a polyfill to make WebSQL behave like IndexedDB but this has some obvious performance implication on WebSQL (required for some of our main target platforms - iPhone, iPad, Blackberry Playbook) and this won't help old browsers such as IE 6-9 or old non-HTML5 mobile web browsers. So rather than trying to poly-fill WebSQL to work like IndexedDB for this demo app we will try to design a new, simple common API that can be used to talk to IndexedDB, WebSQL or fallback to using the network as a data source (via ajax) when neither is available.
+<h2>IndexedDB: Firefox and Internet Explorer 10</h2>
+We're firm believers in progressive enhancement but implementing a feature so that it can work with two different client side database technologies is tricky. We could use a polyfill to make WebSQL behave like IndexedDB but this has some significant performance implications for WebSQL (still required for iPhone, iPad, Playbook, amongst others) and it won't help old browsers such as IE 6-9 or old non-HTML5 mobile web browsers that don't support WebSQL either. So, for maximum compatibility, we will design a new, simple common API that can use any of IndexedDB, WebSQL or the network (via ajax) as a data source.
 
-For this common API we will implement the following methods:-
+For this common API we will implement the following methods on each store:
 
 <table>
+  <thead>
   <tr>
-    <td><u>Method name (Parameters)</u></td>
-    <td><u>Notes</u></td>
+    <th><u>Method name (Parameters)</u></th>
+    <th><u>Notes</u></th>
   </tr>
+  </thead>
+  <tbody>
   <tr>
     <td><strong>start(successCallback)</strong></td>
-    <td>This function will do any data source set up login. We need have a success callback because opening an indexedDB is an asynchronous process.</td>
+    <td>Perform any required data source set up. We need have a success callback because initialising some data sources (indexedDB) may require asynchronous calls.</td>
   </tr>
   <tr>
     <td><strong>selectOne(model, id, successCallback, failureCallback)</strong></td>
-    <td>Selecting a single row in a data store for a type of data, in our demo app model will always be articles.</td>
+    <td>Fetch a single data object from the data store for a type of data.  In our demo app the model will always be an article.</td>
   </tr>
   <tr>
     <td><strong>selectAll(model, successCallback, failureCallback)</strong></td>
-    <td>Selecting all rows in a data store.</td>
+    <td>Fetch all data objects of a specified type from the data store.</td>
   </tr>
   <tr>
     <td><strong>insertInto(model, data, successCallback)</strong></td>
-    <td>Inserting data into a data store.</td>
+    <td>Insert data into a data store.</td>
   </tr>
   <tr>
     <td><strong>deleteAllFrom(model, successCallback)</strong></td>
-    <td>For clearing all the data of one type in a data store.</td>
+    <td>Clear all the data of one type from a data store.</td>
   </tr>
 </table>
 
-For the case where a browser doesn't have a local database this is very easy. We actually don't even need to implement anything for the <code>insertInto</code> and <code>deleteAllFrom</code> methods because they don't make sense for our app.
+Here's how we can implement those methods for the network store:
 
 <strong>/source/datasources/network.js</strong>
 [js]
@@ -175,7 +180,7 @@ APP.network = (function () {
   function selectAll(model, successCallback, failureCallback) {
     $.ajax({
       dataType: 'json',
-      url: APP_ROOT + 'api/' + model,
+      url: 'api/' + model,
       success: successCallback || function () {},
       type: 'GET',
       error: failureCallback || function () {}
@@ -185,7 +190,7 @@ APP.network = (function () {
   function selectOne(model, id, successCallback, failureCallback) {
     $.ajax({
       dataType: 'json',
-      url: APP_ROOT + 'api/' + model + '/' + id,
+      url: 'api/' + model + '/?id=' + id,
       success: successCallback || function () {},
       type: 'GET',
       error: failureCallback || function () {}
@@ -203,7 +208,45 @@ APP.network = (function () {
 }());
 [/js]
 
-This is just a very thin wrapper around the <code>jQuery.ajax</code> method. As far as our app is concerned <code>insertInto</code> and <code>deleteAllFrom</code> don't make sense if we don't have a local database because those functions are concerned with caching data for offline use. One of the complexities of an offline app, and this is true for both native and HTML5 web apps, is that there are always at least two data sources: the data retrieved from the internet and the data stored on the user's device and the challenge is to keep those two data sources in sync as much as possible.
+This is just a very thin wrapper around the <code>jQuery.ajax</code> method. As far as our app is concerned <code>insertInto</code> and <code>deleteAllFrom</code> don't make sense if we don't have a local database because those functions are concerned with caching data for offline use - but we have to implement them to ensure network and Websql/IndexedDB all share the same API, so here calling either of those methods just calls their <code>successCallback</code> straight away.
+
+Because we need to be able to select individual articles (the <code>selectOne</code> method) we need to update the <strong>/api/articles/index.php</strong> file.
+
+[php]
+<?php
+$rss = new SimpleXMLElement(file_get_contents('http://www.guardian.co.uk/technology/mobilephones/rss'));
+
+$articleId = intval(isset($_GET['id']) ? $_GET['id'] : 0);
+if ($articleId) {
+  $xpath = '/rss/channel/item['. $articleId .']';
+} else {
+  $xpath = '/rss/channel/item';
+}
+$items = $rss->xpath($xpath);
+
+if ($items) {
+  $output = array();
+  foreach ($items as $id => $item) {
+
+    // This will be encoded as an object, not an array, by json_encode
+    $output[] = array(
+      'id' => $id + 1,
+      'headline' => strval($item->title),
+      'date' => strval($item->pubDate),
+      'body' => strval(strip_tags($item->description,'<p><br>')),
+      'author' => strval($item->children('http://purl.org/dc/elements/1.1/')->creator)
+    );
+  }
+
+  if ($articleId > 0) {
+    echo json_encode($output[0]);
+  } else {
+    echo json_encode($output);
+  }
+}
+[/php]
+
+Moving on to the WebSQL data store:
 
 <strong>/source/datasources/websql.js</strong>
 [js]
@@ -293,8 +336,14 @@ APP.webSQL = (function () {
     }
 
     function start(successCallback, failureCallback) {
-        smallDatabase = openDatabase("APP", "1.0", "Not The FT Web App", (5 * 1024 * 1024));
-        runQuery("CREATE TABLE IF NOT EXISTS articles(id INTEGER PRIMARY KEY ASC, date TIMESTAMP, author TEXT, headline TEXT, body TEXT)", [], false, successCallback);
+        try {
+            smallDatabase = openDatabase("APP", "1.0", "Not The FT Web App", (5 * 1024 * 1024));
+            runQuery("CREATE TABLE IF NOT EXISTS articles(id INTEGER PRIMARY KEY ASC, date TIMESTAMP, author TEXT, headline TEXT, body TEXT)", [], false, successCallback);
+        } catch (e) {
+            if (failureCallback){
+                failureCallback();
+            }
+        }
     }
 
     return {
@@ -307,20 +356,19 @@ APP.webSQL = (function () {
 }());
 [/js]
 
-This is based on the same code the we used in <a href="http://labs.ft.com/2012/08/basic-offline-html5-web-app/">part 1 of the FT style web app tutorial</a>.
+This is based on the same code the we used in <a href="http://labs.ft.com/2012/08/basic-offline-html5-web-app/">part 1 of the tutorial</a>.
+
+Finally, here's the indexedDB one:
 
 <strong>/source/datasources/indexeddb.js</strong>
 [js]
 APP.indexedDB = (function () {
   'use strict';
 
-  var db,
-    indexedDB = window.indexedDB || window.webkitIndexedDB || window.mozIndexedDB || window.msIndexedDB,
-    IDBTransaction = window.hasOwnProperty('webkitIndexedDB') ? window.webkitIDBTransaction : window.IDBTransaction,
-    IDBKeyRange = window.hasOwnProperty('webkitIndexedDB') ? window.webkitIDBKeyRange : window.IDBKeyRange;
+  var db, indexedDB, IDBTransaction, IDBKeyRange;
 
   function indexedDBError(event) {
-    if (console) {
+    if (typeof console !== "undefined") {
       console.error("An error occurred", event);
     }
   }
@@ -391,6 +439,16 @@ APP.indexedDB = (function () {
   }
 
   function start(successCallback, failureCallback) {
+
+    // Protect ourselves inside old browsers
+    try {
+      indexedDB = window.indexedDB || window.webkitIndexedDB || window.mozIndexedDB || window.msIndexedDB;
+      IDBTransaction = window.hasOwnProperty('webkitIndexedDB') ? window.webkitIDBTransaction : window.IDBTransaction;
+      IDBKeyRange = window.hasOwnProperty('webkitIndexedDB') ? window.webkitIDBKeyRange : window.IDBKeyRange;
+
+    } catch (e) {
+      failureCallback();
+    }
     if (!indexedDB) {
       failureCallback();
       return;
@@ -447,7 +505,9 @@ APP.indexedDB = (function () {
 
 A <a href="https://developer.mozilla.org/en-US/docs/IndexedDB">good resource for understanding indexedDB is on the Mozilla Development Network</a> so I won't go into details on how this works for this tutorial.
 
-Now we will need to update the resources api PHP file so that it is aware of the files we have just created. (And also we need to delete the old database.js file)
+One thing to note though is that on the Firefox the browser asks the user for permission to open an IndexedDB database and if the user declines or cancels the prompt, the app should still be able to continue running. This is handled by <code>request.onerror</code> (notice this calls the <code>failureCallback</code> function, which we'll implement inside <strong>/source/application/applicationcontroller.js</strong>). I've added a simple alert so that the user knows they have opted out of offline functionality. In a production app we might like to handle this more gracefully and perhaps even provide instructions on how to re-enable offline storage.
+
+Now we need to update the resources api PHP file so that it is aware of the files we just created. (the old database.js file can also be deleted at the same time)
 
 <strong>/api/resources/index.php</strong>
 [php]
@@ -477,7 +537,7 @@ $output['css'] = $css;
 echo json_encode($output);
 [/php]
 
-Now we need to add the code that makes the decision about which data source technology to use.
+Now we can add code that makes the decision about which data store to use.
 
 <strong>/source/application/applicationcontroller.js</strong>
 [js]
@@ -537,7 +597,21 @@ APP.applicationController = (function () {
     function initialize(resources) {
 
         // Listen to the hash tag changing
-        $(window).bind("hashchange", route);
+        if ("onhashchange" in window) {
+            $(window).bind("hashchange", route);
+
+        // Support for old IE (which didn't have hash change)
+        } else {
+            (function () {
+                var lastHash = window.location.hash;
+                window.setInterval(function () {
+                    if (window.location.hash !== lastHash) {
+                        lastHash = window.location.hash;
+                        route();
+                    }
+                }, 100);
+            }());
+        }
 
         // Set up FastClick
         fastClick = new FastClick(document.body);
@@ -577,7 +651,7 @@ APP.applicationController = (function () {
             });
         });
 
-        if (storeResources && localStorage) {
+        if (storeResources && window['localStorage']) {
             localStorage.resources = JSON.stringify(resources);
         }
     }
@@ -588,15 +662,16 @@ APP.applicationController = (function () {
 }());
 [/js]
 
-We first attempt to set up an indexedDB database, then if that fails attempt to set up a WebSQL database then finally fail to using the network. This enables us to get the best out of those browsers that support IndexedDB whilst continuing to be able to support all browsers that do not support these features.
+The code to decide which data store to use is inside <code>start</code>. We first attempt to set up an indexedDB database, then if that fails attempt to set up a WebSQL database then finally fall back to using the network. This enables us to get the best out of those browsers that support IndexedDB whilst continuing to be able to support all browsers that do not support these features.
 
-<strong>Other changes:-</strong>
+<strong>Other changes:</strong>
 <ul>
-  <li>I've refactored the code slightly so that much of the functionality used to live inside <code>start</code> is moved to the new private function <code>initialize</code> - which will get run after whichever data source technology the app chooses to use is fully loaded;</li>
+  <li>I've refactored the code slightly so that much of the functionality that used to live inside <code>start</code> is moved to the new private function <code>initialize</code> - which will get run after whichever data source technology the app chooses to use is fully loaded;</li>
   <li>and made a small change to the <code>route</code> function to force the value it passes to <code>showArticle</code> to be an integer.</li>
+  <li>To be able to run the app on IE6, which does not support the <code>hashchange</code> event, I've had to implement a short piece of code that runs every 100ms to see if the hash tag has changed. Also I've needed to change the check to see localStorage is available on the device to <code>window['localStorage']</code>.</li>
 </ul>
 
-Now all the groundwork for being able to support IndexedDB, WebSQL and browsers that have neither client side database technology we need to now update our article model to use the new database API, which will look like this:-
+Now all the groundwork is done, we can update the article model to use the new database API, like this:
 
 <strong>/source/articles/article.js</strong>
 [js]
@@ -628,62 +703,24 @@ APP.article = (function () {
 }());
 [/js]
 
-Finally the format in which a single article comes back as has changed from an array containing a single article to an object. So we need to make one final update:-
+The format in which a single article is returned has changed from an array containing a single article to an object. So one final update is needed to the <code>article</code> method inside <strong>/source/templates.js</strong>. Replace the <code>article</code> function with the code below:-
 
 <strong>/source/templates.js</strong>
 [js]
-APP.templates = (function () {
-    'use strict';
+function article(articleData) {
 
-    function application() {
-        return '<div id="window"><div id="header"><h1>Guardian Technology News</h1></div><div id="body"></div></div>';
-    }
-
-    function home() {
-        return '<button id="refreshButton">Refresh the news!</button><div id="headlines"></div></div>';
-
-    }
-
-    function articleList(articles) {
-        var i, l, output = '';
-
-        if (!articles.length) {
-            return '<p><i>No articles have been found, maybe you haven\'t <b>refreshed the news</b>?</i></p>';
-        }
-        for (i = 0, l = articles.length; i < l; i = i + 1) {
-            output = output + '<li><a href="#' + articles[i].id + '"><b>' + articles[i].headline + '</b><br />By ' + articles[i].author + ' on ' + articles[i].date + '</a></li>';
-        }
-        return '<ul>' + output + '</ul>';
-    }
-
-    function article(articleData) {
-
-        // If the data is not in the right form, redirect to an error
-        if (!articleData) {
-            window.location = '#error';
-            return;
-        }
-        return '<a href="#">Go back home</a><h2>' + articleData.headline + '</h2><h3>By ' + articleData.author + ' on ' + articleData.date + '</h3>' + articleData.body;
-    }
-
-    function articleLoading() {
-        return '<a href="#">Go back home</a><br /><br />Please wait&hellip;';
-    }
-
-    return {
-        application: application,
-        home: home,
-        articleList: articleList,
-        article: article,
-        articleLoading: articleLoading
-    };
-}());
+  // If the data is not in the right form, redirect to an error
+  if (!articleData) {
+    window.location = '#error';
+    return;
+  }
+  return '<a href="#">Go back home</a><h2>' + articleData.headline + '</h2><h3>By ' + articleData.author + ' on ' + articleData.date + '</h3>' + articleData.body;
+}
 [/js]
 
-The change is in fourth function, <code>function article(articleData)</code>.
-
 <h2>Wrapping Up</h2>
-Our app is now responsive on touch enabled devices thanks to FT FastClick. It is also now able to boot in Firefox, IE10 and will perform faster on Chrome and Chrome for Androidand should work - albeit not offline - older browsers such as IE6. But we're not done yet - it's still not a website in a traditional sense: it doesn't work if Javascript is switched off and it can't be indexed by search engines. In next month's article we'll finally fix this.
+
+The app is now responsive on touch enabled devices thanks to FT FastClick. It is also now able to work fully in Firefox and IE10, will perform faster on Chrome and Chrome for Android, and should work - albeit not offline - on older browsers such as IE6 (<a href="http://dev.labs.ft.com/matthew/pt2/">tested and working!</a>). But we're not done yet - it's still not a website in a traditional sense: it doesn't work if Javascript is switched off and it can't be indexed by search engines.  In next month's article we'll finally fix this.
 
 Finally, if you think you'd like to work on this sort of thing and live (or would like to live) in London, <a href="/jobs">we're hiring!</a>
 
