@@ -84,8 +84,14 @@ APP.webSQL = (function () {
     }
 
     function start(successCallback, failureCallback) {
-        smallDatabase = openDatabase("APP", "1.0", "Not The FT Web App", (5 * 1024 * 1024));
-        runQuery("CREATE TABLE IF NOT EXISTS articles(id INTEGER PRIMARY KEY ASC, date TIMESTAMP, author TEXT, headline TEXT, body TEXT)", [], false, successCallback);
+        try {
+            smallDatabase = openDatabase("APP", "1.0", "Not The FT Web App", (5 * 1024 * 1024));
+            runQuery("CREATE TABLE IF NOT EXISTS articles(id INTEGER PRIMARY KEY ASC, date TIMESTAMP, author TEXT, headline TEXT, body TEXT)", [], false, successCallback);
+        } catch (e) {
+            if (failureCallback){
+                failureCallback();
+            }
+        }
     }
 
     return {

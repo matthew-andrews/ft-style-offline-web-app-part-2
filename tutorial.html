@@ -6,7 +6,7 @@ We will keep the core functionality of the app the same - the same simple RSS re
 
 This demo app will continue to be based on the same principals of maximum ubiquity and brevity and so will continue to use jQuery and PHP and will require no special server configuration. As before this tutorial intentionally avoids going into detail on particular technologies and instead attempts to give a high level overview on how, with the fewest lines of code and in the shortest amount of time, various technologies can be brought together to achieve the goals we have set out to solve. This is purely about making the best of what we have available in real browsers today and delivering great experiences on the web platform.
 
-As always, the full code is up on GitHub.
+As always, <a href="https://github.com/matthew-andrews/ft-style-offline-web-app-part-2">the full code is up on GitHub</a>.
 
 <h2>Requirements for the demo app - Part 2</h2>
 <ul>
@@ -326,7 +326,6 @@ APP.indexedDB = (function () {
   }
 
   function insertInto(model, data, successCallback) {
-    console.log("Insert into", model, data, successCallback);
     var transaction = db.transaction([model], IDBTransaction.READ_WRITE || 'readwrite'), store, i, request, total = data.length;
 
     function successCallbackInner() {
@@ -523,6 +522,8 @@ APP.applicationController = (function () {
         var page = window.location.hash;
         if (page) {
             page = page.substring(1);
+        }
+        if (page.length > 0) {
             if (parseInt(page, 10) > 0) {
                 showArticle(parseInt(page, 10));
             } else {

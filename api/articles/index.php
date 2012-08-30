@@ -2,7 +2,14 @@
 // Convert RSS feed to JSON, stripping out all but basic HTML
 // Using Guardian Technology feed as it contains the full content
 $rss = new SimpleXMLElement(file_get_contents('http://www.guardian.co.uk/technology/mobilephones/rss'));
-$xpath = '/rss/channel/item';
+
+
+$articleId = intval(isset($_GET['id']) ? $_GET['id'] : 0);
+if ($articleId) {
+  $xpath = '/rss/channel/item['. $articleId .']';
+} else {
+  $xpath = '/rss/channel/item';
+}
 $items = $rss->xpath($xpath);
 
 if ($items) {
@@ -18,6 +25,10 @@ if ($items) {
       'author' => strval($item->children('http://purl.org/dc/elements/1.1/')->creator)
     );
   }
-}
 
-echo json_encode($output);
+  if ($articleId > 0) {
+    echo json_encode($output[0]);
+  } else {
+    echo json_encode($output);
+  }
+}

@@ -22,7 +22,7 @@ APP.network = (function () {
 	function selectAll(model, successCallback, failureCallback) {
 		$.ajax({
 			dataType: 'json',
-			url: APP_ROOT + 'api/' + model,
+			url: 'api/' + model,
 			success: successCallback || function () {},
 			type: 'GET',
 			error: failureCallback || function () {}
@@ -32,7 +32,7 @@ APP.network = (function () {
 	function selectOne(model, id, successCallback, failureCallback) {
 		$.ajax({
 			dataType: 'json',
-			url: APP_ROOT + 'api/' + model + '/' + id,
+			url: 'api/' + model + '/?id=' + id,
 			success: successCallback || function () {},
 			type: 'GET',
 			error: failureCallback || function () {}
