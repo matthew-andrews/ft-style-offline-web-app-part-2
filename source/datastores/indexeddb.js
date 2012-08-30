@@ -1,10 +1,7 @@
 APP.indexedDB = (function () {
 	'use strict';
 
-	var db,
-		indexedDB = window.indexedDB || window.webkitIndexedDB || window.mozIndexedDB || window.msIndexedDB,
-		IDBTransaction = window.hasOwnProperty('webkitIndexedDB') ? window.webkitIDBTransaction : window.IDBTransaction,
-		IDBKeyRange = window.hasOwnProperty('webkitIndexedDB') ? window.webkitIDBKeyRange : window.IDBKeyRange;
+	var db, indexedDB, IDBTransaction, IDBKeyRange;
 
 	function indexedDBError(event) {
 		if (typeof console !== "undefined") {
@@ -78,6 +75,16 @@ APP.indexedDB = (function () {
 	}
 
 	function start(successCallback, failureCallback) {
+		
+		// Protect ourselves inside old browsers
+		try {
+			indexedDB = window.indexedDB || window.webkitIndexedDB || window.mozIndexedDB || window.msIndexedDB;
+			IDBTransaction = window.hasOwnProperty('webkitIndexedDB') ? window.webkitIDBTransaction : window.IDBTransaction;
+			IDBKeyRange = window.hasOwnProperty('webkitIndexedDB') ? window.webkitIDBKeyRange : window.IDBKeyRange;
+		
+		} catch (e) {
+			failureCallback();
+		}
 		if (!indexedDB) {
 			failureCallback();
 			return;
