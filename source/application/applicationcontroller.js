@@ -54,7 +54,21 @@ APP.applicationController = (function () {
     function initialize(resources) {
 
         // Listen to the hash tag changing
-        $(window).bind("hashchange", route);
+        if ("onhashchange" in window) {
+            $(window).bind("hashchange", route);
+            
+        // Support for old IE (which didn't have hash change)
+        } else {
+            (function () {
+                var lastHash = window.location.hash;
+                window.setInterval(function () {
+                    if (window.location.hash !== lastHash) {
+                        lastHash = window.location.hash;
+                        route();
+                    }
+                }, 100);
+            }());
+        }
 
         // Set up FastClick
         fastClick = new FastClick(document.body);
