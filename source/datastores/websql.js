@@ -38,7 +38,7 @@ APP.webSQL = (function () {
         }
 
         function errorCallback(tx, e) {
-          if (console) {
+          if (typeof console !== "undefined") {
             console.log("WebSQL error: ", tx, e);
           }
         }

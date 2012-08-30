@@ -10,12 +10,16 @@
 
 					// Try to execute the Javascript
 					try {
-						eval(resources.js);
+						if (window.execScript) {
+							window.execScript(resources.js);
+						} else {
+							eval(resources.js);
+						}
 						APP.applicationController.start(resources, storeResources);
 
 					// If the Javascript fails to launch, stop execution!
 					} catch (e) {
-						if (console) {
+						if (typeof console !== "undefined") {
 							console.log(e);
 						}
 						alert(APP_START_FAILED);
@@ -35,7 +39,6 @@
 
 					// Otherwise, apologize and let the user know
 					} else {
-						alert("Cannot find" + JSON.stringify(e));
 						alert(APP_START_FAILED);
 					}
 				}

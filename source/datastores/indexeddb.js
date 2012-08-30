@@ -7,7 +7,7 @@ APP.indexedDB = (function () {
 		IDBKeyRange = window.hasOwnProperty('webkitIndexedDB') ? window.webkitIDBKeyRange : window.IDBKeyRange;
 
 	function indexedDBError(event) {
-		if (console) {
+		if (typeof console !== "undefined") {
 			console.error("An error occurred", event);
 		}
 	}

@@ -70,11 +70,11 @@ APP.applicationController = (function () {
 
         route();
     }
-
+*/
     // This is to our webapp what main() is to C, $(document).ready is to jQuery, etc
     function start(resources, start) {
-
-        // When indexedDB available, use it!
+	alert("STARTED");
+/*        // When indexedDB available, use it!
         APP.indexedDB.start(function indexedDBSuccess() {
             APP.database = APP.indexedDB;
             initialize(resources);
@@ -97,7 +97,7 @@ APP.applicationController = (function () {
         if (storeResources && localStorage) {
             localStorage.resources = JSON.stringify(resources);
         }
-    }
+ */   }
 
     return {
         start: start
