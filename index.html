@@ -15,7 +15,9 @@
 
 					// If the Javascript fails to launch, stop execution!
 					} catch (e) {
-						console.log(e);
+						if (console) {
+							console.log(e);
+						}
 						alert(APP_START_FAILED);
 					}
 				}
