@@ -30,7 +30,7 @@
 					var resources;
 
 					// If we have resources saved from a previous visit, use them
-					if (localStorage && localStorage.resources) {
+					if (window['localStorage'] && localStorage.resources) {
 						resources = JSON.parse(localStorage.resources);
 						startWithResources(resources, false);
 
@@ -53,7 +53,6 @@
 						dataType: 'json'
 					});
 				}
-
 			});
 		</script>
 		<title>News</title>
