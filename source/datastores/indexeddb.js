@@ -40,10 +40,9 @@ APP.indexedDB = (function () {
 	}
 
 	function selectAll(model, successCallback) {
-		var transaction = db.transaction([model], IDBTransaction.READ_ONLY || 'readonly'), store, request, results = [], range;
+		var transaction = db.transaction([model], IDBTransaction.READ_ONLY || 'readonly'), store, request, results = [];
 		transaction.onerror = indexedDBError;
 		store = transaction.objectStore(model);
-		range = IDBKeyRange.lowerBound(0);
 		request = store.openCursor();
 
 		request.onerror = indexedDBError;
@@ -75,13 +74,13 @@ APP.indexedDB = (function () {
 	}
 
 	function start(successCallback, failureCallback) {
-		
+
 		// Protect ourselves inside old browsers
 		try {
 			indexedDB = window.indexedDB || window.webkitIndexedDB || window.mozIndexedDB || window.msIndexedDB;
 			IDBTransaction = window.hasOwnProperty('webkitIndexedDB') ? window.webkitIDBTransaction : window.IDBTransaction;
 			IDBKeyRange = window.hasOwnProperty('webkitIndexedDB') ? window.webkitIDBKeyRange : window.IDBKeyRange;
-		
+
 		} catch (e) {
 			failureCallback();
 		}
