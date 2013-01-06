@@ -467,12 +467,13 @@ APP.indexedDB = (function () {
 			var setVersionRequest;
 
 			db = event.target.result;
+			version = String(version);
 			if (db.setVersion && version !== db.version) {
 				setVersionRequest = db.setVersion(version);
 				setVersionRequest.onfailure = indexedDBError;
 				setVersionRequest.onsuccess = function (event) {
 					installModels();
-					event.target.transaction.oncomplete = function () {
+					setVersionRequest.result.oncomplete = function () {
 						if (successCallback) {
 							successCallback();
 						}
