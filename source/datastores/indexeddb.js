@@ -40,10 +40,9 @@ APP.indexedDB = (function () {
 	}
 
 	function selectAll(model, successCallback) {
-		var transaction = db.transaction([model], IDBTransaction.READ_ONLY || 'readonly'), store, request, results = [], range;
+		var transaction = db.transaction([model], IDBTransaction.READ_ONLY || 'readonly'), store, request, results = [];
 		transaction.onerror = indexedDBError;
 		store = transaction.objectStore(model);
-		range = IDBKeyRange.lowerBound(0);
 		request = store.openCursor();
 
 		request.onerror = indexedDBError;
@@ -75,13 +74,13 @@ APP.indexedDB = (function () {
 	}
 
 	function start(successCallback, failureCallback) {
-		
+
 		// Protect ourselves inside old browsers
 		try {
 			indexedDB = window.indexedDB || window.webkitIndexedDB || window.mozIndexedDB || window.msIndexedDB;
 			IDBTransaction = window.hasOwnProperty('webkitIndexedDB') ? window.webkitIDBTransaction : window.IDBTransaction;
 			IDBKeyRange = window.hasOwnProperty('webkitIndexedDB') ? window.webkitIDBKeyRange : window.IDBKeyRange;
-		
+
 		} catch (e) {
 			failureCallback();
 		}
@@ -90,10 +89,11 @@ APP.indexedDB = (function () {
 			return;
 		}
 
-		var request = indexedDB.open("APPDATA", 1),
-			version = '5.0';
+		var version = 6,
+			request = indexedDB.open("APPDATA", version);
 
-		function installModels(db) {
+		function installModels() {
+			db.deleteObjectStore("articles");
 
 			// TODO This is strictly model logic, and ought not live inside the indexedDB library, should move.
 			db.createObjectStore("articles", {keyPath: "id"});
@@ -120,8 +120,8 @@ APP.indexedDB = (function () {
 			}
 		};
 		request.onupgradeneeded = function (event) {
-			var db = event.target.result;
-			installModels(db);
+			db = event.target.result;
+			installModels();
 		};
 		request.onerror = function (event) {
 			alert("You have chosen not to use offline storage");
