@@ -126,7 +126,6 @@ APP.indexedDB = (function () {
 			installModels();
 		};
 		request.onerror = function (event) {
-			debugger;
 			alert("You have chosen not to use offline storage");
 			failureCallback();
 		};
