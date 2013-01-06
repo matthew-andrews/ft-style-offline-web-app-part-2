@@ -93,8 +93,10 @@ APP.indexedDB = (function () {
 			request = indexedDB.open("APPDATA", version);
 
 		function installModels() {
-			db.deleteObjectStore("articles");
-
+			if (db.objectStoreNames.contains("articles")) {
+				db.deleteObjectStore("articles");
+			}
+	
 			// TODO This is strictly model logic, and ought not live inside the indexedDB library, should move.
 			db.createObjectStore("articles", {keyPath: "id"});
 		}
@@ -124,6 +126,7 @@ APP.indexedDB = (function () {
 			installModels();
 		};
 		request.onerror = function (event) {
+			debugger;
 			alert("You have chosen not to use offline storage");
 			failureCallback();
 		};
