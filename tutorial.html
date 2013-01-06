@@ -471,7 +471,7 @@ APP.indexedDB = (function () {
 				setVersionRequest = db.setVersion(version);
 				setVersionRequest.onfailure = indexedDBError;
 				setVersionRequest.onsuccess = function (event) {
-					installModels(db);
+					installModels();
 					event.target.transaction.oncomplete = function () {
 						if (successCallback) {
 							successCallback();
@@ -485,7 +485,7 @@ APP.indexedDB = (function () {
 		};
 		request.onupgradeneeded = function (event) {
 			db = event.target.result;
-			installModels(db);
+			installModels();
 		};
 		request.onerror = function (event) {
 			alert("You have chosen not to use offline storage");
