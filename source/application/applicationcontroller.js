@@ -56,7 +56,7 @@ APP.applicationController = (function () {
         // Listen to the hash tag changing
         if ("onhashchange" in window) {
             $(window).bind("hashchange", route);
-            
+
         // Support for old IE (which didn't have hash change)
         } else {
             (function () {

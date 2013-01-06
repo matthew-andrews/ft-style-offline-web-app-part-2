@@ -3,16 +3,6 @@ APP.webSQL = (function () {
 
     var smallDatabase;
 
-    /**
-     * Runs database queries
-     *
-     * @public
-     * @param  {String} query
-     * @param  {Array} data
-     * @param  {Boolean} returnFirst
-     * @param  {Function} successCallback
-     * @return {void}
-     */
     function runQuery(query, data, returnFirst, successCallback) {
         var i, l, remaining;
 
