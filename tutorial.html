@@ -451,13 +451,14 @@ APP.indexedDB = (function () {
       return;
     }
 
-    var request = indexedDB.open("APPDATA", 1),
-      version = '5.0';
+    var version = 6,
+    request = indexedDB.open("APPDATA", version);
 
-    function installModels(db) {
+    function installModels() {
+      db.deleteObjectStore("articles");
 
       // TODO This is strictly model logic, and ought not live inside the indexedDB library, should move.
-      db.createObjectStore("articles", {keyPath: "id"});
+      db.createObjectStore("articles", { keyPath: "id" });
     }
 
     request.onsuccess = function (event) {
@@ -481,7 +482,7 @@ APP.indexedDB = (function () {
       }
     };
     request.onupgradeneeded = function (event) {
-      var db = event.target.result;
+      db = event.target.result;
       installModels(db);
     };
     request.onerror = function (event) {
