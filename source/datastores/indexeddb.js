@@ -40,10 +40,9 @@ APP.indexedDB = (function () {
 	}
 
 	function selectAll(model, successCallback) {
-		var transaction = db.transaction([model], IDBTransaction.READ_ONLY || 'readonly'), store, request, results = [], range;
+		var transaction = db.transaction([model], IDBTransaction.READ_ONLY || 'readonly'), store, request, results = [];
 		transaction.onerror = indexedDBError;
 		store = transaction.objectStore(model);
-		range = IDBKeyRange.lowerBound(0);
 		request = store.openCursor();
 
 		request.onerror = indexedDBError;

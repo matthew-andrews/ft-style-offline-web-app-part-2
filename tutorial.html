@@ -2,18 +2,25 @@ This is part 2 of a <a href="http://labs.ft.com/category/tutorial/">tutorial ser
 
 We left off last time with a severely limited, but working, offline HTML5 web app. This time we will aim to address some of the concerns that were raised at the end of the last tutorial.
 
-We will keep the core functionality of the app the same - the same simple RSS reader - and instead focus on making it faster and making it work for everyone, including users of Firefox, IE10, and even old pre-HTML5 browsers, such as IE6.
+We will keep the core functionality of the app the same - the same simple RSS reader - and instead focus on making it faster and making it work for everyone, including users of Firefox, IE10 (including web apps formerly known as Metro style), and even old pre-HTML5 browsers, such as IE6.
 
 This demo app will continue to be based on the same principals of maximum ubiquity and brevity and so will continue to use jQuery and PHP and will require no special server configuration. As before this tutorial intentionally avoids going into detail on particular technologies and instead attempts to give a high level overview on how, with the fewest lines of code and in the shortest amount of time, various technologies can be brought together to achieve the goals we have set out to solve. This is purely about making the best of what we have available in real browsers today and delivering great experiences on the web platform.
 
 As always, <a href="https://github.com/matthew-andrews/ft-style-offline-web-app-part-2">the full code is up on GitHub</a>.
+
+<h2>Getting Started</h2>
+Start by cloning (<a href="https://github.com/matthew-andrews/basic-offline-html5-web-app/zipball/master">or downloading</a>) the GitHub repository from Part 1.
+
+[text]
+git clone https://github.com/matthew-andrews/basic-offline-html5-web-app.git
+[/text]
 
 <h2>New requirements</h2>
 <ul>
   <li>A minimised delay between a user clicking a button and a page being displayed.</li>
   <li>Fully support Firefox, Internet Explorer 10, achieve better performance on Chrome as well as continue to support all the platforms supported by the first tutorial (which included Android, Blackberry Playbook, iPads and iPhones).</li>
   <li>Support every other browser as well as we can - falling back to being a normal website on older browsers.</i></li>
-  <li>Users of the app we made in the previous tutorial should be able to seamlessly start using the new app (ie the new bootstrap must be compatible with the old version).</li>
+  <li>Users of the app we made in the previous tutorial should be able to seamlessly start using the new app.
 </ul>
 
 <h2>Housekeeping</h2>
@@ -23,7 +30,7 @@ To overcome the tap-delay we'll use an FT Labs open source project: <a href="htt
 <table>
   <tr>
     <td><b>/libraries/client/fastclick.js</b></td>
-    <td><a href="https://raw.github.com/ftlabs/fastclick/master/src/fastclick.js">Download</a></td>
+    <td><a href="https://raw.github.com/ftlabs/fastclick/master/lib/fastclick.js">Download</a></td>
   </tr>
   <tr>
     <td><b>/source/datasources/network.js</b></td>
@@ -89,7 +96,7 @@ APP.applicationController = (function () {
 </li>
 <li>Second, add the single line that sets up FT FastClick for the project (<code>fastClick = new FastClick(document.body);</code>) inside the <code>start</code> function. The <code>start</code> function is now:
 [js]
-function start(resources, start) {
+function start(resources, storeResources) {
   APP.database.open(function () {
 
     // Listen to the hash tag changing
@@ -255,15 +262,6 @@ APP.webSQL = (function () {
 
     var smallDatabase;
 
-    /**
-     * Runs database queries
-     *
-     * @public
-     * @param  {String} query
-     * @param  {Array} data
-     * @param  {Function} successCallback
-     * @return {void}
-     */
     function runQuery(query, data, returnFirst, successCallback) {
         var i, l, remaining;
 
@@ -404,10 +402,9 @@ APP.indexedDB = (function () {
   }
 
   function selectAll(model, successCallback) {
-    var transaction = db.transaction([model], IDBTransaction.READ_ONLY || 'readonly'), store, request, results = [], range;
+    var transaction = db.transaction([model], IDBTransaction.READ_ONLY || 'readonly'), store, request, results = [];
     transaction.onerror = indexedDBError;
     store = transaction.objectStore(model);
-    range = IDBKeyRange.lowerBound(0);
     request = store.openCursor();
 
     request.onerror = indexedDBError;
@@ -520,9 +517,9 @@ $js = $js . 'var APP={}; (function (APP) {';
 $js = $js . file_get_contents('../../source/application/applicationcontroller.js');
 $js = $js . file_get_contents('../../source/articles/articlescontroller.js');
 $js = $js . file_get_contents('../../source/articles/article.js');
-$js = $js . file_get_contents('../../source/datasource/network.js');
-$js = $js . file_get_contents('../../source/datasource/indexeddb.js');
-$js = $js . file_get_contents('../../source/datasource/websql.js');
+$js = $js . file_get_contents('../../source/datasources/network.js');
+$js = $js . file_get_contents('../../source/datasources/indexeddb.js');
+$js = $js . file_get_contents('../../source/datasources/websql.js');
 $js = $js . file_get_contents('../../source/templates.js');
 $js = $js . '}(APP));';
 $output['js'] = $js;
@@ -720,8 +717,10 @@ function article(articleData) {
 
 <h2>Wrapping Up</h2>
 
-The app is now responsive on touch enabled devices thanks to FT FastClick. It is also now able to work fully in Firefox and IE10, will perform faster on Chrome and Chrome for Android, and should work - albeit not offline - on older browsers such as IE6 (<a href="http://dev.labs.ft.com/matthew/pt2/">tested and working!</a>). But we're not done yet - it's still not a website in a traditional sense: it doesn't work if Javascript is switched off and it can't be indexed by search engines.  In next month's article we'll finally fix this.
+The app is now responsive on touch enabled devices thanks to <a href="http://labs.ft.com/articles/ft-fastclick/">FT FastClick</a>. It is also now able to work fully in Firefox and IE10, will perform faster on Chrome and Chrome for Android, and should work - albeit not offline - on older browsers such as IE6 (<a href="http://dev.labs.ft.com/matthew/pt2/">tested and working!</a>). But we're not done yet - it's still not a website in a traditional sense: it doesn't work if Javascript is switched off and it can't be indexed by search engines. In next month's article we'll get a step closer to achieving this.
 
 Finally, if you think you'd like to work on this sort of thing and live (or would like to live) in London, <a href="/jobs">we're hiring!</a>
 
-<span style="font-size: 80%; line-height: 1em;">MA - @andrewsmatt on <a href="http://twitter.com/andrewsmatt">Twitter</a> &amp; <a href="http://weibo.com/andrewsmatt">Weibo</a>.</span>
+<span style="font-size: 80%; line-height: 1em;">By <a href="http://mattandre.ws">Matt Andrews</a> – @andrewsmatt on <a href="http://twitter.com/andrewsmatt">Twitter</a> &amp; <a href="http://weibo.com/andrewsmatt">Weibo</a>.</span>
+
+<p align="right"><strong><a href="http://labs.ft.com/2012/11/using-an-iframe-to-stop-app-cache-storing-masters/">Continue to part 3 - ‘Fixing’ the application cache with an iframe <span class="meta-nav">→</span></a></strong></p>
