@@ -3,7 +3,7 @@
 // This would be a sensible point to compress your Javascript.
 $js = '';
 $js .= file_get_contents('../../libraries/client/fastclick.js');
-$js = $js . 'var APP={}; (function (APP) {';
+$js = $js . 'window.APP={}; (function (APP) {';
 $js = $js . file_get_contents('../../source/application/applicationcontroller.js');
 $js = $js . file_get_contents('../../source/articles/articlescontroller.js');
 $js = $js . file_get_contents('../../source/articles/article.js');
