@@ -87,6 +87,24 @@ APP.applicationController = (function () {
 
     // This is to our webapp what main() is to C, $(document).ready is to jQuery, etc
     function start(resources, storeResources) {
+		var iOSPrivateBrowsing = false;
+
+		// Try to detect whether iOS private browsing mode is enabled
+		try {
+			localStorage.test = '';
+			localStorage.removeItem('item');
+		} catch (exception) {
+			if (exception.code === 22) {
+				iOSPrivateBrowsing = true;
+			}
+		}
+		
+		if (iOSPrivateBrowsing) {
+			return APP.network.start(function networkSuccess() {
+                APP.database = APP.network;
+                initialize(resources);
+            });
+		}
 
         // When indexedDB available, use it!
         APP.indexedDB.start(function indexedDBSuccess() {
