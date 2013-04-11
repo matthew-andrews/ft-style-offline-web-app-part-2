@@ -1,7 +1,8 @@
 APP.applicationController = (function () {
     'use strict';
 
-    var fastClick;
+    var fastClick,
+		iOSPrivateBrowsing;
 
     function offlineWarning() {
         alert("This feature is only available online.");
@@ -87,7 +88,6 @@ APP.applicationController = (function () {
 
     // This is to our webapp what main() is to C, $(document).ready is to jQuery, etc
     function start(resources, storeResources) {
-		var iOSPrivateBrowsing = false;
 
 		// Try to detect whether iOS private browsing mode is enabled
 		try {
