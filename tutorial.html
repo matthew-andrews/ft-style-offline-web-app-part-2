@@ -221,7 +221,7 @@ Because we need to be able to select individual articles (the <code>selectOne</c
 
 [php]
 <?php
-$rss = new SimpleXMLElement(file_get_contents('http://www.guardian.co.uk/technology/mobilephones/rss'));
+$rss = new SimpleXMLElement(file_get_contents('http://feeds2.feedburner.com/ft/tech-blog'));
 
 $articleId = intval(isset($_GET['id']) ? $_GET['id'] : 0);
 if ($articleId) {
@@ -354,7 +354,7 @@ APP.webSQL = (function () {
 }());
 [/js]
 
-This is based on the same code the we used in <a href="http://labs.ft.com/2012/08/basic-offline-html5-web-app/">part 1 of the tutorial</a>. 
+This is based on the same code the we used in <a href="http://labs.ft.com/2012/08/basic-offline-html5-web-app/">part 1 of the tutorial</a>.
 
 Finally, here's the indexedDB one:
 
@@ -600,7 +600,7 @@ APP.applicationController = (function () {
         // Listen to the hash tag changing
         if ("onhashchange" in window) {
             $(window).bind("hashchange", route);
-            
+
         // Support for old IE (which didn't have hash change)
         } else {
             (function () {
