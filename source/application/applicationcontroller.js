@@ -1,7 +1,8 @@
 APP.applicationController = (function () {
     'use strict';
 
-    var fastClick;
+    var fastClick,
+		iOSPrivateBrowsing;
 
     function offlineWarning() {
         alert("This feature is only available online.");
@@ -23,9 +24,7 @@ APP.applicationController = (function () {
             if (navigator && navigator.onLine === false) {
                 offlineWarning();
             } else {
-                APP.articlesController.synchronizeWithServer(function failureCallback() {
-                    alert("This feature is not available offline");
-                });
+                APP.articlesController.synchronizeWithServer(offlineWarning);
             }
         });
     }
@@ -87,6 +86,23 @@ APP.applicationController = (function () {
 
     // This is to our webapp what main() is to C, $(document).ready is to jQuery, etc
     function start(resources, storeResources) {
+
+		// Try to detect whether iOS private browsing mode is enabled
+		try {
+			localStorage.test = '';
+			localStorage.removeItem('item');
+		} catch (exception) {
+			if (exception.code === 22) {
+				iOSPrivateBrowsing = true;
+			}
+		}
+		
+		if (iOSPrivateBrowsing) {
+			return APP.network.start(function networkSuccess() {
+                APP.database = APP.network;
+                initialize(resources);
+            });
+		}
 
         // When indexedDB available, use it!
         APP.indexedDB.start(function indexedDBSuccess() {
